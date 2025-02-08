@@ -4,12 +4,13 @@ import React, { useState, useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
-const Map = () => {
+const Map = (props) => {
+    const { coordinates, setCoordinates } = props;
+
     const mapContainerRef = useRef();
     const mapRef = useRef();
 
     const [lightPreset, setLightPreset] = useState('day');
-
     const [events, setEvents] = useState([])
   
     useEffect(() => {
@@ -17,7 +18,7 @@ const Map = () => {
   
       mapRef.current = new mapboxgl.Map({
         style: 'mapbox://styles/mapbox/standard',
-        center: [-93.265, 44.978],
+        center: [coordinates[0], coordinates[1]],
         zoom: 15.5,
         pitch: 60,
         bearing: -17.6,

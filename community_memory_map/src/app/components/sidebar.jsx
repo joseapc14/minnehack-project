@@ -7,10 +7,13 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  Filter,
+  PlusCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-const Sidebar = () => {
+const Sidebar = (props) => {
+    const { coordinates } = props;
   const [isExpanded, setIsExpanded] = useState(true);
 
   const [closestEvents, setClosestEvents] = useState([
@@ -25,6 +28,10 @@ const Sidebar = () => {
         "History of the flour industry told through interactive exhibits in the rebuilt ruins of an old mill.",
     },
   ]);
+  const [filter, setFilter] = useState("");
+  const filteredEvents = closestEvents.filter((event) =>
+    event.title.toLowerCase().includes(filter.toLowerCase())
+  );
 
   return (
     <div className="relative">
@@ -42,7 +49,19 @@ const Sidebar = () => {
 
         {isExpanded && (
           <div className="flex flex-col gap-4 ml-10">
-            {closestEvents.map((event, index) => (
+            <div className="flex items-center gap-2">
+              <Filter />
+              <input
+                type="text"
+                placeholder="Filter events..."
+                className="p-2 border rounded-lg w-full"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              />
+            </div>
+            <div>Showing results for {coordinates[0]}, {coordinates[1]}...</div>
+
+            {filteredEvents.map((event, index) => (
               <div key={index} className="p-4 border rounded-lg shadow-sm">
                 <h2 className="font-bold text-lg">{event.title}</h2>
                 <p className="text-sm text-gray-600">{event.description}</p>
@@ -56,8 +75,16 @@ const Sidebar = () => {
                 </div>
               </div>
             ))}
+
+            <button className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200 mt-4">
+              <PlusCircle /> Add Your Own Event At Coordinates [{coordinates[0]}, {coordinates[1]}]
+            </button>
           </div>
         )}
+
+        <div className="absolute mr-0 h-50 w-50">
+          <User />
+        </div>
       </motion.div>
     </div>
   );
