@@ -9,6 +9,8 @@ const Map = () => {
     const mapRef = useRef();
 
     const [lightPreset, setLightPreset] = useState('day');
+
+    const [events, setEvents] = useState([])
   
     useEffect(() => {
       mapboxgl.accessToken = 'pk.eyJ1Ijoiam9zZWFwMTQiLCJhIjoiY202d25kNDJxMGNpdDJ3b253c3Y2cTFtciJ9.SLAy6bf556NyUWSksRkLjQ';
@@ -17,12 +19,12 @@ const Map = () => {
         style: 'mapbox://styles/mapbox/standard',
         center: [-93.265, 44.978],
         zoom: 15.5,
-        pitch: 45,
+        pitch: 60,
         bearing: -17.6,
         container: 'map',
         antialias: true,
         projection: 'globe',
-        hash:true,
+        hash: true,
         config: {
             basemap: {
                 lightPreset: 'dusk'
@@ -30,7 +32,7 @@ const Map = () => {
         }
     });
   
-      mapRef.current.on('style.load', () => {
+    mapRef.current.on('style.load', () => {
         // const layers = mapRef.current.getStyle().layers;
         // const labelLayerId = layers.find(
         //   (layer) => layer.type === 'symbol' && layer.layout['text-field']
