@@ -1,71 +1,99 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const Map = () => {
-  const mapContainerRef = useRef();
-  const mapRef = useRef();
+    const mapContainerRef = useRef();
+    const mapRef = useRef();
 
-  useEffect(() => {
-    mapboxgl.accessToken =
-      "pk.eyJ1Ijoiam9zZWFwMTQiLCJhIjoiY202d25kNDJxMGNpdDJ3b253c3Y2cTFtciJ9.SLAy6bf556NyUWSksRkLjQ";
-
-    // Initialize the map
-    mapRef.current = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/streets-v12", // 3D-ready style
-      center: [-93.265, 44.978], // Default center (Minneapolis)
-      zoom: 12,
-      pitch: 60, // Tilt to enable 3D
-      bearing: -15, // Rotate slightly for better perspective
-      antialias: true,
+    const [lightPreset, setLightPreset] = useState('day');
+  
+    useEffect(() => {
+      mapboxgl.accessToken = 'pk.eyJ1Ijoiam9zZWFwMTQiLCJhIjoiY202d25kNDJxMGNpdDJ3b253c3Y2cTFtciJ9.SLAy6bf556NyUWSksRkLjQ';
+  
+      mapRef.current = new mapboxgl.Map({
+        style: 'mapbox://styles/mapbox/standard',
+        center: [-93.265, 44.978],
+        zoom: 15.5,
+        pitch: 45,
+        bearing: -17.6,
+        container: 'map',
+        antialias: true,
+        projection: 'globe',
+        hash:true,
+        config: {
+            basemap: {
+                lightPreset: 'dusk'
+            }
+        }
     });
+  
+      mapRef.current.on('style.load', () => {
+        // const layers = mapRef.current.getStyle().layers;
+        // const labelLayerId = layers.find(
+        //   (layer) => layer.type === 'symbol' && layer.layout['text-field']
+        // ).id;
+  
+        // mapRef.current.addLayer(
+        //   {
+        //     id: 'add-3d-buildings',
+        //     source: 'composite',
+        //     'source-layer': 'building',
+        //     filter: ['==', 'extrude', 'true'],
+        //     type: 'fill-extrusion',
+        //     minzoom: 15,
+        //     paint: {
+        //       'fill-extrusion-color': '#aaa',
+        //       'fill-extrusion-height': [
+        //         'interpolate',
+        //         ['linear'],
+        //         ['zoom'],
+        //         15,
+        //         0,
+        //         15.05,
+        //         ['get', 'height']
+        //       ],
+        //       'fill-extrusion-base': [
+        //         'interpolate',
+        //         ['linear'],
+        //         ['zoom'],
+        //         15,
+        //         0,
+        //         15.05,
+        //         ['get', 'min_height']
+        //       ],
+        //       'fill-extrusion-opacity': 0.6
+        //     }
+        //   },
+        //   labelLayerId
+        // );
+        
+        // const map = mapRef.current;
+        // const zoomBasedReveal = (value) => {
+        //     return ['interpolate', ['linear'], ['zoom'], 11, 0.0, 13, value];
+        // };
 
-    mapRef.current.on("load", () => {
-      // Add a Digital Elevation Model (DEM) source for terrain
-      mapRef.current.addSource("mapbox-dem", {
-        type: "raster-dem",
-        url: "mapbox://mapbox.terrain-rgb",
-        tileSize: 512,
-        maxzoom: 14,
+        // map.setSnow({
+        //     density: zoomBasedReveal(0.85),
+        //     intensity: 1.0,
+        //     'center-thinning': 0.1,
+        //     direction: [0, 50],
+        //     opacity: 1.0,
+        //     color: `#ffffff`,
+        //     'flake-size': 0.71,
+        //     vignette: zoomBasedReveal(0.3),
+        //     'vignette-color': `#ffffff`
+        //   });
       });
 
-      // Enable terrain with exaggeration
-      mapRef.current.setTerrain({ source: "mapbox-dem", exaggeration: 1.5 });
 
-      // Add 3D buildings
-      mapRef.current.addLayer({
-        id: "3d-buildings",
-        source: "composite",
-        "source-layer": "building",
-        type: "fill-extrusion",
-        minzoom: 15,
-        paint: {
-          "fill-extrusion-color": "#aaa",
-          "fill-extrusion-height": ["get", "height"],
-          "fill-extrusion-base": ["get", "min_height"],
-          "fill-extrusion-opacity": 0.6,
-        },
-      });
-
-      // Add a sky layer for realism
-      mapRef.current.addLayer({
-        id: "sky",
-        type: "sky",
-        paint: {
-          "sky-type": "atmosphere",
-          "sky-atmosphere-sun": [0.0, 90.0],
-          "sky-atmosphere-sun-intensity": 15,
-        },
-      });
-    });
-
-    return () => mapRef.current.remove();
-  }, []);
-
-  return <div ref={mapContainerRef} style={{ height: "100vh", width: "100%" }} />;
-};
+  
+      return () => mapRef.current.remove();
+    }, []);
+  
+    return <div id="map" ref={mapContainerRef} style={{ height: '100%' }}></div>;
+  };
 
 export default Map;
