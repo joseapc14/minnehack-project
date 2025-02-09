@@ -120,7 +120,7 @@ with open(EMBEDDING_CACHE_PATH, "wb") as cache_file:
 
 def get_embedding(text: str, model: str = EMBEDDING_MODEL) -> list:
     from openai import OpenAI
-    client = OpenAI()  # Assumes OPENAI_API_KEY is set in your environment
+    client = OpenAI()  # Assumes OPENAI_API_KEY is set in the environment
     response = client.embeddings.create(input=text, model=model)
     return response.data[0].embedding
 
@@ -167,14 +167,14 @@ def get_recommendations_from_query(events_df: pd.DataFrame, query: str, k_neares
                 "latitude": ...,
                 "date": "...",
                 "postid": ...,
-                "isevent": ...,
+                "isEvent": ...,
                 "distance": <computed distance>
             },
             ...
         ]
     }
     """
-    # Combine title and description for each event using .get() to avoid KeyError
+    # Combine title and description using .get() to avoid missing-key errors
     event_texts = events_df.apply(
         lambda row: f"Title: {row.get('title', '')}\nDescription: {row.get('description', '')}",
         axis=1
@@ -199,7 +199,7 @@ def get_recommendations_from_query(events_df: pd.DataFrame, query: str, k_neares
             break
         # Convert the row to a dictionary
         event_dict = events_df.iloc[idx].to_dict()
-        # Generate a postid using the DataFrame's index (or any other unique method)
+        # Generate a unique identifier (postid) using the DataFrame's index (you can change this if needed)
         event_dict["postid"] = int(events_df.index[idx])
         # Add the computed distance
         event_dict["distance"] = distances[idx]
@@ -207,7 +207,6 @@ def get_recommendations_from_query(events_df: pd.DataFrame, query: str, k_neares
         count += 1
     
     return {"events": recommended_events}
-
 
 # Pydantic model for incoming recommendation query
 class QueryRequest(BaseModel):
@@ -226,16 +225,18 @@ def recommend_events(request: QueryRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving events: {str(e)}")
     
-    # Convert the events (list of dicts) to a pandas DataFrame
-    df = pd.DataFrame(events)
-    # Normalize column names to lowercase (e.g. "Title" -> "title", "User" -> "user", etc.)
+    # Convert the events to a DataFrame ensuring each row is a dictionary
+    df = pd.DataFrame([dict(row) for row in events])
+    # Normalize column names to lowercase
     df.columns = [str(col).lower() for col in df.columns]
     
-    # Rename 'user' column to 'username' so that it matches the expected output format
+    # Rename columns to match desired output:
     if "user" in df.columns:
         df = df.rename(columns={"user": "username"})
+    if "isevent" in df.columns:
+        df = df.rename(columns={"isevent": "isEvent"})
     
-    # Convert the date column if it exists (from SQL DATE to ISO format)
+    # Convert the date column if it exists (SQL DATE to ISO format)
     if "date" in df.columns and pd.api.types.is_datetime64_any_dtype(df["date"]):
         df["date"] = df["date"].apply(lambda d: d.isoformat())
     
