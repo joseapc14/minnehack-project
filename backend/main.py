@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, HTTPException, File
 from fastapi.responses import RedirectResponse,StreamingResponse,JSONResponse
 from botocore.exceptions import NoCredentialsError
 from math import radians, sin, cos, sqrt, atan2
+import subprocess
 import io
 import boto3
 import os
@@ -47,32 +48,42 @@ async def get_image(image_name: str):
     return StreamingResponse(io.BytesIO(image_data), media_type="image/jpeg")
     
 
+
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
-    print(S3_PUBLIC_URL)
-    try:
-        # Generate a unique file name using uuid to avoid overwriting
-        unique_filename = f"{uuid.uuid4().hex}_{file.filename}"
-        print(S3_BUCKET_NAME)
-        # Upload file to S3
-        s3_client.upload_fileobj(
-            file.file,
-            S3_BUCKET_NAME,
-            unique_filename,
-            ExtraArgs={"ContentType": file.content_type}
-        )
+   print(S3_PUBLIC_URL)
+   try:
+       # Generate a unique file name using uuid to avoid overwriting
+       unique_filename = f"{uuid.uuid4().hex}_{file.filename}"
+       local_path = f"./test.png"
 
-        # Generate the public URL of the uploaded file
-        file_url = f"{S3_PUBLIC_URL}/{unique_filename}"
 
-        # Return the URL of the uploaded image
-        return JSONResponse(content={"image_url": file_url}, status_code=200)
+       with open(local_path, "wb") as buffer:
+           buffer.write(await file.read())
+       print(S3_BUCKET_NAME)
+       subprocess.run(["node", "process.js"], capture_output=True, text=True)
+       # Upload file to S3
+       print('uploading')
+       with open("output_with_transparent_circle.png", 'rb') as editedFile:
+           s3_client.upload_fileobj(
+               editedFile,
+               S3_BUCKET_NAME,
+               unique_filename,
+               ExtraArgs={"ContentType": "image/png"}
+           )
+       print('reached1')
+       # Generate the public URL of the uploaded file
+       file_url = f"{S3_PUBLIC_URL}/{unique_filename}"
 
-    except NoCredentialsError:
-        raise HTTPException(status_code=403, detail="AWS credentials not found or incorrect.")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
+       # Return the URL of the uploaded image
+       return JSONResponse(content={"image_url": file_url}, status_code=200)
+
+
+   except NoCredentialsError:
+       raise HTTPException(status_code=403, detail="AWS credentials not found or incorrect.")
+   except Exception as e:
+       raise HTTPException(status_code=500, detail=str(e))
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     # Haversine formula to calculate the distance between two points on the Earth's surface
