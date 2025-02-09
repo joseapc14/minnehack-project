@@ -1,4 +1,3 @@
-"use client";
 import { useState } from "react";
 import { XCircle } from "lucide-react";
 
@@ -8,38 +7,89 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
     description: "",
     tags: "",
     image: null,
-    date: "", 
+    date: "",
   });
 
   const [imagePreview, setImagePreview] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [imageUrl, setImageUrl] = useState(null); // Store the image URL after upload
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !newEvent.title.trim() ||
-      // !newEvent.description.trim() ||
-      !newEvent.date
-    ) {
-      return; 
+  
+    // Validate required fields
+    if (!newEvent.title.trim() || !newEvent.date) {
+      setErrorMessage("Title and date are required.");
+      return;
     }
+  
+    if (!newEvent.image) {
+      setErrorMessage("Please select an image to upload.");
+      return;
+    }
+  
+    let uploadedImageUrl = "";
+    try {
+      // Prepare FormData for image upload
+      const formData = new FormData();
+      formData.append("file", newEvent.image);
+  
+      // Upload image
+      const response = await fetch("http://127.0.0.1:8000/upload-image/", {
+        method: "POST",
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        throw new Error("Image upload failed");
+      }
+  
+      const data = await response.json();
+      uploadedImageUrl = data.image_url; // Use variable instead of state update
+    } catch (error) {
+      setErrorMessage("Failed to upload image.");
+      return; // Stop execution if upload fails
+    }
+  
+    try {
+      // Construct event data
+      const eventData = {
+        username: "test_user", // Replace with actual user session data
+        title: newEvent.title,
+        description: newEvent.description,
+        imageurl: uploadedImageUrl, // Ensure the image URL is included
+        tags: newEvent.tags,
+        longitude: coordinates[0],
+        latitude: coordinates[1],
+        date: newEvent.date, // Date should already be in YYYY-MM-DD format
+        isEvent: true,
+      };
 
-    setEvents((prevEvents) => [
-      ...prevEvents,
-      { ...newEvent, coordinates: [...coordinates], isEvent: true },
-    ]);
-
-    setNewEvent({
-      title: "",
-      description: "",
-      tags:"",
-      image: null,
-      date: "",
-    });
-    setImagePreview(null);
-    setErrorMessage(""); 
-    setShowForm(false);
+      console.log("Event data being sent:", JSON.stringify(eventData));
+  
+      // Submit event
+      const eventResponse = await fetch("http://127.0.0.1:8000/add-event/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(eventData),
+      });
+  
+      if (!eventResponse.ok) throw new Error("Event submission failed");
+  
+      // Reset form on success
+      setNewEvent({ title: "", description: "", tags: "", image: null, date: "" });
+      setImagePreview(null);
+      setImageUrl(null);
+      setErrorMessage("");
+      setShowForm(false);
+      setEvents((prevEvents) => [...prevEvents, eventData]); // Update UI with new event
+    } catch (error) {
+      setErrorMessage("Failed to submit the event.");
+    }
   };
+  
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -53,7 +103,7 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
       } else {
         setErrorMessage("");
         setNewEvent((prev) => ({ ...prev, image: file }));
-        setImagePreview(URL.createObjectURL(file)); 
+        setImagePreview(URL.createObjectURL(file));
       }
     }
   };
@@ -78,7 +128,7 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
         />
         <textarea
           placeholder="Event Description"
-          className="p-2 border rounded-lg h-40 min-h-10 max-h-60 overflow-auto" 
+          className="p-2 border rounded-lg h-40 min-h-10 max-h-60 overflow-auto"
           value={newEvent.description}
           onChange={(e) =>
             setNewEvent((prev) => ({ ...prev, description: e.target.value }))
@@ -86,7 +136,7 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
         />
         <textarea
           placeholder="Tags"
-          className="p-2 border rounded-lg h-10 min-h-10 max-h-20 overflow-auto" 
+          className="p-2 border rounded-lg h-10 min-h-10 max-h-20 overflow-auto"
           value={newEvent.tags}
           onChange={(e) =>
             setNewEvent((prev) => ({ ...prev, tags: e.target.value }))
@@ -123,7 +173,8 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
         </p>
 
         <div className="ml-1 mt-2 text-gray-500 font-semibold">
-          Coordinates: [{coordinates[0].toFixed(3)}, {coordinates[1].toFixed(3)}]
+          Coordinates: [{coordinates[0].toFixed(3)}, {coordinates[1].toFixed(3)}
+          ]
         </div>
 
         <button

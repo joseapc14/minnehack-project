@@ -7,7 +7,9 @@ import boto3
 import os
 import psycopg2
 import uuid
+from pydantic import BaseModel
 from psycopg2.extras import DictCursor
+from datetime import datetime, date
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -29,10 +31,12 @@ DATABASE_URL = "postgres://ufjgvj3cmsm1m6:pb0ae99a299aaf078c4202af4c25e2479c37cf
 # Initialize S3 client
 s3_client = boto3.client(
     's3',
-    aws_access_key_id='your-access-id',  # Optional if set in env
-    aws_secret_access_key='your-secret',  # Optional if set in env
+    aws_access_key_id='',  # Optional if set in env
+    aws_secret_access_key='',  # Optional if set in env
     region_name='us-east-1'  # Optional if set in env
 )
+
+
 
 @app.get("/get-image/{image_name}")
 async def get_image(image_name: str):
@@ -132,8 +136,6 @@ async def get_events(lat: float, lon: float, radius: float):
 
     # username Title ,desc date, coords tags,
 
-
-# Pydantic model for the incoming event data
 class Event(BaseModel):
     username: str
     title: str
@@ -142,27 +144,25 @@ class Event(BaseModel):
     tags: str
     longitude: float
     latitude: float
-    date: datetime
-    postid: str
+    date: datetime  
     isEvent: bool
 
 @app.post("/add-event/")
 async def add_event(event: Event):
     try:
-        # Connect to PostgreSQL
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        # Insert query (excluding postid)
-        # pass in date in YYYY-MM-DD format
+        # Ensure date is stored as "YYYY-MM-DD" format
+        date_value = event.date.date().isoformat()
+
         query = """
-        INSERT INTO EventData (username, title, description, imageurl, tags, longitude, latitude, date, isEvent)
+        INSERT INTO EventData (username, title, description, imageurl, tags, longitude, latitude, date, "isEvent")
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        RETURNING postid;  # Retrieve the auto-generated postid
-        """
-        
-        # Execute the query
-        cursor.execute(query, (
+        RETURNING postid;
+        """ 
+
+        values = (
             event.username,
             event.title,
             event.description,
@@ -170,24 +170,25 @@ async def add_event(event: Event):
             event.tags,
             event.longitude,
             event.latitude,
-            event.date,
+            date_value, 
             event.isEvent
-        ))
+        )
 
-        # Fetch the newly generated postid
-        new_postid = cursor.fetchone()[0]
+        print("Executing query with values:", values)
 
-        # Commit transaction
+        cursor.execute(query, values)
+        new_postid = cursor.fetchone()[0]  
         connection.commit()
 
-        # Close the cursor and connection
         cursor.close()
         connection.close()
 
-        # Return the generated postid to the frontend
         return {"message": "Event added successfully", "postid": new_postid}
 
     except psycopg2.Error as err:
+        print("Database error:", err) 
         raise HTTPException(status_code=500, detail=f"Database error: {str(err)}")
+
     except Exception as e:
+        print("General error:", e) 
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
