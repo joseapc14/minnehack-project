@@ -64,24 +64,25 @@ const Map = (props) => {
 
     return () => mapRef.current.remove();
   }, []);
-
+  
   useEffect(() => {
     if (!mapRef.current) return;
   
     const updateMapWithEvents = () => {
-      const iconUrl = "https://docs.mapbox.com/mapbox-gl-js/assets/cat.png";
-      mapRef.current.loadImage(iconUrl, (error, image) => {
-        if (error) {
-          console.error("Error loading image:", error);
-          return;
-        }
+      events.forEach((event) => {
+        const iconUrl = event.imageurl;  // Assuming each event has a unique imageurl property
   
-        if (!mapRef.current.hasImage("event-icon")) {
-          mapRef.current.addImage("event-icon", image);
-        }
+        mapRef.current.loadImage(iconUrl, (error, image) => {
+          if (error) {
+            console.error("Error loading image:", error);
+            return;
+          }
   
-        // Loop through the events to add sources and layers
-        events.forEach((event) => {
+          // Add the image for the event if it doesn't exist
+          if (!mapRef.current.hasImage(event.title)) {
+            mapRef.current.addImage(event.title, image);
+          }
+  
           // Add source if it doesn't already exist
           if (!mapRef.current.getSource(event.title)) {
             mapRef.current.addSource(event.title, {
@@ -112,18 +113,20 @@ const Map = (props) => {
               type: "symbol",
               source: event.title,
               layout: {
-                "icon-image": "event-icon",
-                "icon-size": 0.25,
-                "text-field": ["get", "title"],
-                "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-                "text-offset": [0, 1.5],
-                "text-anchor": "top",
-                "text-size": 12,
+                "icon-image": event.title,
+                "icon-size": 0.065,  
+                // "text-field": ["get", "title"],
+                // "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+                // "text-offset": [0, 1.5],  // Position title below the icon
+                // "text-anchor": "bottom-left",  // Position text in the bottom-left corner
+                // "text-size": 12,
               },
+              // paint: {
+              //   "text-color": "white",  
+              // },
             });
           }
   
-          // Popup and hover behavior
           mapRef.current.on("click", event.title, (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             const title = e.features[0].properties.title;
@@ -151,11 +154,8 @@ const Map = (props) => {
     // Cleanup logic: Remove layers and sources that no longer exist in the new events
     return () => {
       const currentEventTitles = events.map((event) => event.title);
-  
-      // Remove layers and sources for events that are no longer in the updated list
       const allLayers = mapRef.current.getStyle().layers || [];
       allLayers.forEach((layer) => {
-        // If the layer's id is not in the current event titles, remove it
         if (!currentEventTitles.includes(layer.id)) {
           if (mapRef.current.getLayer(layer.id)) {
             mapRef.current.removeLayer(layer.id);

@@ -20,7 +20,7 @@ export default function Home() {
       try {
         const response = await fetch(url);
         const data = await response.json();
-        console.log(data)
+        
         if (data && Array.isArray(data.events)) {
           setEvents(data.events);  
         } else {
