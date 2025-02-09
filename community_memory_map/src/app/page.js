@@ -10,8 +10,10 @@ export default function Home() {
   const [longitude, setLongitude] = useState(-93.265);
   const [showForm, setShowForm] = useState(false);
   const [events, setEvents] = useState([]);
-
   const [searchTerm, setSearchTerm] = useState("");
+
+  // **New state to hold the Mapbox instance**
+  const [mapInstance, setMapInstance] = useState(null);
 
   // Fetch events when coordinates change
   useEffect(() => {
@@ -82,9 +84,25 @@ export default function Home() {
         </button>
       </div>
 
-
-      <Map latitude={latitude} longitude={longitude} setLatitude={setLatitude} setLongitude={setLongitude} events={events}/>
-      <Sidebar latitude={latitude} longitude={longitude} events={events} setEvent={setEvents} setShowForm={setShowForm}/>
+      {/* Pass setMapInstance to capture the Mapbox map instance */}
+      <Map
+        latitude={latitude}
+        longitude={longitude}
+        setLatitude={setLatitude}
+        setLongitude={setLongitude}
+        events={events}
+        setMapInstance={setMapInstance}
+      />
+      
+      {/* Pass the mapInstance so Sidebar can call flyTo() */}
+      <Sidebar
+        latitude={latitude}
+        longitude={longitude}
+        events={events}
+        setEvents={setEvents}
+        setShowForm={setShowForm}
+        mapInstance={mapInstance}
+      />
 
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

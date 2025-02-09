@@ -1,16 +1,14 @@
+// map.jsx
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const Map = (props) => {
-  const { latitude, longitude, setLatitude, setLongitude, events } = props;
-
+  const { latitude, longitude, setLatitude, setLongitude, events, setMapInstance } = props;
   const mapContainerRef = useRef();
   const mapRef = useRef();
-
-  const [lightPreset, setLightPreset] = useState("day");
 
   useEffect(() => {
     mapboxgl.accessToken =
@@ -33,21 +31,11 @@ const Map = (props) => {
       },
     });
 
-    mapRef.current.on("style.load", () => {
-      const zoomBasedReveal = (value) => {
-        return ["interpolate", ["linear"], ["zoom"], 11, 0.0, 13, value];
-      };
-      mapRef.current.setSnow({
-        density: zoomBasedReveal(0.85),
-        intensity: 1.0,
-        "center-thinning": 0.1,
-        direction: [0, 50],
-        opacity: 1.0,
-        color: `#ffffff`,
-        "flake-size": 0.2,
-        vignette: zoomBasedReveal(0.2),
-        "vignette-color": `#ffffff`,
-      });
+    // When the map loads, pass the instance upward
+    mapRef.current.on("load", () => {
+      if (setMapInstance) {
+        setMapInstance(mapRef.current);
+      }
     });
 
     mapRef.current.on("click", (e) => {
@@ -64,13 +52,14 @@ const Map = (props) => {
 
     return () => mapRef.current.remove();
   }, []);
-  
+
+  // Existing useEffect to update markers based on events…
   useEffect(() => {
     if (!mapRef.current) return;
   
     const updateMapWithEvents = () => {
       events.forEach((event) => {
-        const iconUrl = event.imageurl;  // Assuming each event has a unique imageurl property
+        const iconUrl = event.imageurl; // Assuming each event has a unique imageurl
   
         mapRef.current.loadImage(iconUrl, (error, image) => {
           if (error) {
@@ -78,12 +67,10 @@ const Map = (props) => {
             return;
           }
   
-          // Add the image for the event if it doesn't exist
           if (!mapRef.current.hasImage(event.title)) {
             mapRef.current.addImage(event.title, image);
           }
   
-          // Add source if it doesn't already exist
           if (!mapRef.current.getSource(event.title)) {
             mapRef.current.addSource(event.title, {
               type: "geojson",
@@ -106,7 +93,6 @@ const Map = (props) => {
             });
           }
   
-          // Add layer if it doesn't already exist
           if (!mapRef.current.getLayer(event.title)) {
             mapRef.current.addLayer({
               id: event.title,
@@ -114,16 +100,8 @@ const Map = (props) => {
               source: event.title,
               layout: {
                 "icon-image": event.title,
-                "icon-size": 0.2,  
-                // "text-field": ["get", "title"],
-                // "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-                // "text-offset": [0, 1.5],  // Position title below the icon
-                // "text-anchor": "bottom-left",  // Position text in the bottom-left corner
-                // "text-size": 12,
+                "icon-size": 0.2,
               },
-              // paint: {
-              //   "text-color": "white",  
-              // },
             });
           }
   
@@ -151,7 +129,6 @@ const Map = (props) => {
   
     updateMapWithEvents();
   
-    // Cleanup logic: Remove layers and sources that no longer exist in the new events
     return () => {
       const currentEventTitles = events.map((event) => event.title);
       const allLayers = mapRef.current.getStyle().layers || [];
@@ -168,7 +145,6 @@ const Map = (props) => {
     };
   }, [events]);
   
-
   return <div ref={mapContainerRef} style={{ height: "100%" }}></div>;
 };
 

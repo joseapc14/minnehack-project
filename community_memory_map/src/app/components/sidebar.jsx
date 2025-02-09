@@ -1,12 +1,13 @@
+// sidebar.jsx
 "use client";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Filter, PlusCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Sidebar = (props) => {
-  const { latitude, longitude, events, setEvents, setShowForm } = props;
+  // Include mapInstance in the destructured props
+  const { latitude, longitude, events, setEvents, setShowForm, mapInstance } = props;
   const [isExpanded, setIsExpanded] = useState(true);
-
   const [filter, setFilter] = useState("");
   const [filterType, setFilterType] = useState({
     events: true,
@@ -45,10 +46,9 @@ const Sidebar = (props) => {
           {!isExpanded ? <ChevronLeft /> : <ChevronRight />}
         </button>
 
-        {/* filter */}
+        {/* Filter Section */}
         {isExpanded && (
           <div className="ml-14 p-6 pb-0">
-            {/* Dropdown */}
             <div className="relative group mb-2">
               <div className="flex">
                 <div className="flex w-full items-center gap-2 p-2 bg-gray-100 rounded-lg group-hover:bg-gray-300 cursor-pointer transition duration-200">
@@ -82,10 +82,7 @@ const Sidebar = (props) => {
                       onChange={() => handleCheckboxChange("memories")}
                       className="cursor-pointer"
                     />
-                    <label
-                      htmlFor="memories"
-                      className="text-md cursor-pointer"
-                    >
+                    <label htmlFor="memories" className="text-md cursor-pointer">
                       Memories
                     </label>
                   </div>
@@ -113,25 +110,29 @@ const Sidebar = (props) => {
           </div>
         )}
 
-        {/* events list */}
+        {/* Events List */}
         {isExpanded && (
           <>
             <div className="flex flex-col gap-4 ml-14 p-6 h-3/4 overflow-auto">
               {filteredEvents.map((event, index) => (
                 <div
                   key={index}
-                  className="p-4 border rounded-lg shadow-sm bg-white"
+                  className="p-4 border rounded-lg shadow-sm bg-white cursor-pointer"
+                  // **New: On double-click, fly the map to the event’s location**
+                  onDoubleClick={() => {
+                    if (mapInstance) {
+                      mapInstance.flyTo({
+                        center: [event.longitude + 0.004, event.latitude],
+                        zoom: 16,      // Adjust zoom as desired
+                        speed: 1.2,    // Animation speed (default is 1.2)
+                        curve: 1,      // Flight curve smoothness
+                        duration: 2000 // Duration in ms (2 seconds)
+                      });
+                    }
+                  }}
                 >
                   <h2 className="font-bold text-lg">{event.title}</h2>
                   <p className="text-sm text-gray-600">{event.description}</p>
-                  {/* <div className="flex gap-2 mt-2">
-                  <button className="px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200">
-                    JOIN
-                  </button>
-                  <button className="px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200">
-                    RECORD YOUR PAST EXPERIENCE
-                  </button>
-                </div> */}
                 </div>
               ))}
             </div>
@@ -139,7 +140,7 @@ const Sidebar = (props) => {
             <div className="flex flex-col gap-4 ml-14 pt-4 p-6 h-500 overflow-auto">
               <button
                 className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200 mt-4"
-                onClick={() => setShowForm(true)} // Open form in parent
+                onClick={() => setShowForm(true)}
               >
                 <PlusCircle /> Add Your Own Event At Coordinates [
                 {longitude.toFixed(3)}, {latitude.toFixed(3)}]
