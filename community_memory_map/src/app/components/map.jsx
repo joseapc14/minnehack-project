@@ -131,10 +131,10 @@ const Map = (props) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             const title = e.features[0].properties.title;
             const description = e.features[0].properties.description;
-  
+
             new mapboxgl.Popup()
               .setLngLat(coordinates)
-              .setHTML(`<strong>${title}</strong><p>${description}</p>`)
+              .setHTML(`<strong>${title}</strong><p>${description}<br><hr style="margin: 8px 0;">${event.date}</p>`)
               .addTo(mapRef.current);
           });
   
