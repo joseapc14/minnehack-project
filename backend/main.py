@@ -128,3 +128,66 @@ async def get_events(lat: float, lon: float, radius: float):
         raise HTTPException(status_code=500, detail=f"PostgreSQL error: {str(err)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    
+
+    # username Title ,desc date, coords tags,
+
+
+# Pydantic model for the incoming event data
+class Event(BaseModel):
+    username: str
+    title: str
+    description: str
+    imageurl: str
+    tags: str
+    longitude: float
+    latitude: float
+    date: datetime
+    postid: str
+    isEvent: bool
+
+@app.post("/add-event/")
+async def add_event(event: Event):
+    try:
+        # Connect to PostgreSQL
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # Insert query (excluding postid)
+        # pass in date in YYYY-MM-DD format
+        query = """
+        INSERT INTO EventData (username, title, description, imageurl, tags, longitude, latitude, date, isEvent)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING postid;  # Retrieve the auto-generated postid
+        """
+        
+        # Execute the query
+        cursor.execute(query, (
+            event.username,
+            event.title,
+            event.description,
+            event.imageurl,
+            event.tags,
+            event.longitude,
+            event.latitude,
+            event.date,
+            event.isEvent
+        ))
+
+        # Fetch the newly generated postid
+        new_postid = cursor.fetchone()[0]
+
+        # Commit transaction
+        connection.commit()
+
+        # Close the cursor and connection
+        cursor.close()
+        connection.close()
+
+        # Return the generated postid to the frontend
+        return {"message": "Event added successfully", "postid": new_postid}
+
+    except psycopg2.Error as err:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(err)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
