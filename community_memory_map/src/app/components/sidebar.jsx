@@ -51,7 +51,7 @@ const Sidebar = (props) => {
             {/* Dropdown */}
             <div className="relative group mb-2">
               <div className="flex">
-                <div className="flex w-full items-center gap-2 p-2 bg-gray-200 rounded-lg group-hover:bg-gray-300 cursor-pointer transition duration-200">
+                <div className="flex w-full items-center gap-2 p-2 bg-gray-100 rounded-lg group-hover:bg-gray-300 cursor-pointer transition duration-200">
                   <Filter className="cursor-pointer text-gray-700" size={20} />
                   <span className="font-medium font-semibold text-gray-800">
                     Filter
@@ -123,14 +123,14 @@ const Sidebar = (props) => {
               >
                 <h2 className="font-bold text-lg">{event.title}</h2>
                 <p className="text-sm text-gray-600">{event.description}</p>
-                <div className="flex gap-2 mt-2">
+                {/* <div className="flex gap-2 mt-2">
                   <button className="px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200">
                     JOIN
                   </button>
                   <button className="px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200">
                     RECORD YOUR PAST EXPERIENCE
                   </button>
-                </div>
+                </div> */}
               </div>
             ))}
 

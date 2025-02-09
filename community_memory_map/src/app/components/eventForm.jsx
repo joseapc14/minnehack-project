@@ -28,7 +28,6 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
       { ...newEvent, coordinates: [...coordinates], isEvent: true },
     ]);
 
-    // Reset form and state
     setNewEvent({
       title: "",
       description: "",
