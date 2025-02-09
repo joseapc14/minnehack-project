@@ -74,7 +74,7 @@ const Sidebar = (props) => {
               <div className="flex">
                 <div className="flex w-full items-center gap-2 p-2 bg-gray-200 rounded-lg group-hover:bg-gray-300 cursor-pointer transition duration-200">
                   <Filter className="cursor-pointer text-gray-700" size={20} />
-                  <span className="font-medium text-gray-800">Filter</span>
+                  <span className="font-medium font-semibold text-gray-800">Filter</span>
                 </div>
               </div>
               <div
@@ -114,7 +114,7 @@ const Sidebar = (props) => {
 
             <input
               type="text"
-              placeholder="Filter events..."
+              placeholder="Search for an event..."
               className="p-2 border rounded-lg w-full"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
@@ -127,7 +127,7 @@ const Sidebar = (props) => {
                 : filterType.memories
                 ? "Showing memories"
                 : "No filter applied"}{" "}
-              for [{coordinates[0].toFixed(2)}, {coordinates[1].toFixed(2)}]
+              for [{coordinates[0].toFixed(3)}, {coordinates[1].toFixed(3)}]
             </div>
           </div>
         )}
@@ -155,7 +155,7 @@ const Sidebar = (props) => {
 
             <button className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200 mt-4">
               <PlusCircle /> Add Your Own Event At Coordinates [
-              {coordinates[0].toFixed(2)}, {coordinates[1].toFixed(2)}]
+              {coordinates[0].toFixed(3)}, {coordinates[1].toFixed(3)}]
             </button>
           </div>
         )}
