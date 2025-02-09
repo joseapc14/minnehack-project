@@ -4,35 +4,14 @@ import { ChevronLeft, ChevronRight, Filter, PlusCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Sidebar = (props) => {
-  const { coordinates } = props;
+  const { coordinates, events, setEvents } = props;
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const [closestEvents, setClosestEvents] = useState([
-    {
-      title: "Guthrie Theatre Community Tour",
-      description:
-        "Guthrie Theatre Community Tour dives into the history of Minneapolis’s iconic theatre’s history and famous past features.",
-      isEvent: true,
-    },
-    {
-      title: "Mill City Museum Tour",
-      description:
-        "History of the flour industry told through interactive exhibits in the rebuilt ruins of an old mill.",
-      isEvent: true,
-    },
-    {
-      title: "Grandpa's Stories of Old Minneapolis",
-      description:
-        "A collection of personal memories and experiences shared from a lifetime in Minneapolis.",
-      isEvent: false,
-    },
-  ]);
   const [filter, setFilter] = useState("");
   const [filterType, setFilterType] = useState({
-    events: true, // true means selected, false means unselected
-    memories: true, // true means selected, false means unselected
+    events: true,
+    memories: true,
   });
-  const [showDropdown, setShowDropdown] = useState(false);
 
   const handleCheckboxChange = (type) => {
     setFilterType((prev) => ({
@@ -41,7 +20,7 @@ const Sidebar = (props) => {
     }));
   };
 
-  const filteredEvents = closestEvents.filter((event) => {
+  const filteredEvents = events.filter((event) => {
     const matchesFilter = event.title
       .toLowerCase()
       .includes(filter.toLowerCase());
