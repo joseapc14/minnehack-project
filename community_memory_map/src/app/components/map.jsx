@@ -8,6 +8,7 @@ const Map = (props) => {
     const { coordinates, setCoordinates } = props;
 
     const mapContainerRef = useRef();
+    const [clickEvent, setClickEvent] = useState();
     const mapRef = useRef();
 
     const [lightPreset, setLightPreset] = useState('day');
@@ -89,6 +90,13 @@ const Map = (props) => {
         //     vignette: zoomBasedReveal(0.3),
         //     'vignette-color': `#ffffff`
         //   });
+
+        
+          mapRef.current.on('click', (e) => {
+            setClickEvent(e);
+            setCoordinates([e.lngLat.lng, e.lngLat.lat])
+          });
+          
       });
 
 

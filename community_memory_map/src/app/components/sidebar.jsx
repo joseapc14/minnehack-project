@@ -59,7 +59,7 @@ const Sidebar = (props) => {
                 onChange={(e) => setFilter(e.target.value)}
               />
             </div>
-            <div>Showing results for {coordinates[0]}, {coordinates[1]}...</div>
+            <div>Showing results for {coordinates[0].toFixed(2)}, {coordinates[1].toFixed(2)}...</div>
 
             {filteredEvents.map((event, index) => (
               <div key={index} className="p-4 border rounded-lg shadow-sm">
@@ -77,7 +77,7 @@ const Sidebar = (props) => {
             ))}
 
             <button className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200 mt-4">
-              <PlusCircle /> Add Your Own Event At Coordinates [{coordinates[0]}, {coordinates[1]}]
+              <PlusCircle /> Add Your Own Event At Coordinates [{coordinates[0].toFixed(2)}, {coordinates[1].toFixed(2)}]
             </button>
           </div>
         )}

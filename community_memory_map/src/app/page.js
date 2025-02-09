@@ -8,7 +8,7 @@ export default function Home() {
   
   return (
     <div className="h-screen w-screen">
-      <Map coordinates={coordinates}/>
+      <Map coordinates={coordinates} setCoordinates={setCoordinates}/>
       <Sidebar coordinates={coordinates} setCoordinates={setCoordinates}/>
     </div>
   );
