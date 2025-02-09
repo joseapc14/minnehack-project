@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Filter, PlusCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Sidebar = (props) => {
-  const { coordinates, events, setEvents, setShowForm } = props;
+  const { latitude, longitude, events, setEvents, setShowForm } = props;
   const [isExpanded, setIsExpanded] = useState(true);
 
   const [filter, setFilter] = useState("");
@@ -100,7 +100,7 @@ const Sidebar = (props) => {
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
-            <div className="mt-1">
+            <div className="mt-1 mb-1">
               {filterType.events && filterType.memories
                 ? "Showing both events and memories"
                 : filterType.events
@@ -108,22 +108,23 @@ const Sidebar = (props) => {
                 : filterType.memories
                 ? "Showing memories"
                 : "No filter applied"}{" "}
-              for [{coordinates[0].toFixed(3)}, {coordinates[1].toFixed(3)}]
+              for [{longitude.toFixed(3)}, {latitude.toFixed(3)}]
             </div>
           </div>
         )}
 
         {/* events list */}
         {isExpanded && (
-          <div className="flex flex-col gap-4 ml-14 p-6">
-            {filteredEvents.map((event, index) => (
-              <div
-                key={index}
-                className="p-4 border rounded-lg shadow-sm bg-white"
-              >
-                <h2 className="font-bold text-lg">{event.title}</h2>
-                <p className="text-sm text-gray-600">{event.description}</p>
-                {/* <div className="flex gap-2 mt-2">
+          <>
+            <div className="flex flex-col gap-4 ml-14 p-6 h-3/4 overflow-auto">
+              {filteredEvents.map((event, index) => (
+                <div
+                  key={index}
+                  className="p-4 border rounded-lg shadow-sm bg-white"
+                >
+                  <h2 className="font-bold text-lg">{event.title}</h2>
+                  <p className="text-sm text-gray-600">{event.description}</p>
+                  {/* <div className="flex gap-2 mt-2">
                   <button className="px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200">
                     JOIN
                   </button>
@@ -131,19 +132,20 @@ const Sidebar = (props) => {
                     RECORD YOUR PAST EXPERIENCE
                   </button>
                 </div> */}
-              </div>
-            ))}
+                </div>
+              ))}
+            </div>
 
-            {/* open add event form at current coordinates */}
-            <button
-              className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200 mt-4"
-              onClick={() => setShowForm(true)} // Open form in parent
-            >
-              <PlusCircle /> Add Your Own Event At Coordinates [
-              {coordinates[0].toFixed(3)}, {coordinates[1].toFixed(3)}]
-            </button>
-
-          </div>
+            <div className="flex flex-col gap-4 ml-14 pt-4 p-6 h-500 overflow-auto">
+              <button
+                className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200 mt-4"
+                onClick={() => setShowForm(true)} // Open form in parent
+              >
+                <PlusCircle /> Add Your Own Event At Coordinates [
+                {longitude.toFixed(3)}, {latitude.toFixed(3)}]
+              </button>
+            </div>
+          </>
         )}
       </motion.div>
     </div>

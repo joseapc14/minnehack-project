@@ -11,6 +11,15 @@ from psycopg2.extras import DictCursor
 # Initialize FastAPI app
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or specify your frontend domain, e.g., ["http://localhost:3000"]
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
+
 # AWS S3 Configuration (Set these as environment variables or replace with actual values)
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "your-bucket-name")
