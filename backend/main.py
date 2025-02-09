@@ -1,11 +1,12 @@
 from fastapi import FastAPI, UploadFile, HTTPException, File
 from fastapi.responses import RedirectResponse,StreamingResponse,JSONResponse
 from botocore.exceptions import NoCredentialsError
-import mysql.connector
 from math import radians, sin, cos, sqrt, atan2
 import io
 import boto3
 import os
+import psycopg2
+from psycopg2.extras import DictCursor
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -14,10 +15,7 @@ app = FastAPI()
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "your-bucket-name")
 S3_PUBLIC_URL = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
-DB_HOST = "10.131.217.165"
-DB_USER = "root"
-DB_PASSWORD = "my-secret-pw"
-DB_NAME = "trial"
+DATABASE_URL = "postgres://ufjgvj3cmsm1m6:pb0ae99a299aaf078c4202af4c25e2479c37cfd6840d7b3f1b531c88e590ff1a1@ccpa7stkruda3o.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d3gtgu1i569dre"
 
 # Initialize S3 client
 s3_client = boto3.client("s3")
@@ -64,46 +62,30 @@ async def upload_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Function to calculate distance using the Haversine formula
 def calculate_distance(lat1, lon1, lat2, lon2):
-    # Radius of the Earth in kilometers
-    R = 6371.0
-    # Convert degrees to radians
-    lat1_rad = radians(lat1)
-    lon1_rad = radians(lon1)
-    lat2_rad = radians(lat2)
-    lon2_rad = radians(lon2)
-
-    # Difference in coordinates
-    dlon = lon2_rad - lon1_rad
-    dlat = lat2_rad - lat1_rad
-
-    # Haversine formula
-    a = sin(dlat / 2)**2 + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2)**2
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-
-    # Distance in kilometers
-    distance = R * c
+    # Haversine formula to calculate the distance between two points on the Earth's surface
+    R = 6371  # Radius of Earth in km
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    distance = R * c  # Result in kilometers
     return distance
 
-# Database connection function
 def get_db_connection():
-    connection = mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_NAME
-    )
-    return connection
-
+    # Connect to the PostgreSQL database
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    return conn
 
 @app.get("/get-events/")
 async def get_events(lat: float, lon: float, radius: float):
     try:
-        # Connect to MySQL database
+        # Connect to PostgreSQL database
         connection = get_db_connection()
-        cursor = connection.cursor(dictionary=True)
-        print(connection)
+        
+        # Use DictCursor for fetching rows as dictionaries
+        cursor = connection.cursor(cursor_factory=DictCursor)
+        
         # SQL query to get all events from the database
         query = "SELECT * FROM EventData"
         cursor.execute(query)
@@ -112,14 +94,17 @@ async def get_events(lat: float, lon: float, radius: float):
         events = cursor.fetchall()
         
         nearby_events = []
-
         for event in events:
+            # Extract event latitude and longitude from the database
+            event_lat = event['latitude']  # Ensure the column name is correct
+            event_lon = event['longitude']  # Ensure the column name is correct
+            
             # Calculate the distance from the provided location (lat, lon)
-            event_lat = event['Lat']
-            event_lon = event['Long']
             distance = calculate_distance(lat, lon, event_lat, event_lon)
 
             # If the event is within the specified radius, add to the list
+            event['date'] = event['date'].isoformat()  # Format the date
+            event=dict(event)
             if distance <= radius:
                 event['distance'] = distance  # Add the calculated distance to the event
                 nearby_events.append(event)
@@ -131,8 +116,7 @@ async def get_events(lat: float, lon: float, radius: float):
         # Return the list of nearby events
         return JSONResponse(content={"events": nearby_events})
 
-    except mysql.connector.Error as err:
-        raise HTTPException(status_code=500, detail=f"MySQL error: {str(err)}")
+    except psycopg2.Error as err:
+        raise HTTPException(status_code=500, detail=f"PostgreSQL error: {str(err)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
