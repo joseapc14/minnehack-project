@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Filter, PlusCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Sidebar = (props) => {
-  const { coordinates, events, setEvents } = props;
+  const { coordinates, events, setEvents, setShowForm } = props;
   const [isExpanded, setIsExpanded] = useState(true);
 
   const [filter, setFilter] = useState("");
@@ -53,7 +53,9 @@ const Sidebar = (props) => {
               <div className="flex">
                 <div className="flex w-full items-center gap-2 p-2 bg-gray-200 rounded-lg group-hover:bg-gray-300 cursor-pointer transition duration-200">
                   <Filter className="cursor-pointer text-gray-700" size={20} />
-                  <span className="font-medium font-semibold text-gray-800">Filter</span>
+                  <span className="font-medium font-semibold text-gray-800">
+                    Filter
+                  </span>
                 </div>
               </div>
               <div
@@ -132,10 +134,15 @@ const Sidebar = (props) => {
               </div>
             ))}
 
-            <button className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200 mt-4">
+            {/* open add event form at current coordinates */}
+            <button
+              className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-100 hover:bg-gray-200 mt-4"
+              onClick={() => setShowForm(true)} // Open form in parent
+            >
               <PlusCircle /> Add Your Own Event At Coordinates [
               {coordinates[0].toFixed(3)}, {coordinates[1].toFixed(3)}]
             </button>
+
           </div>
         )}
       </motion.div>

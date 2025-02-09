@@ -1,11 +1,13 @@
 "use client";
 import Map from "./components/map";
 import Sidebar from "./components/sidebar";
+import EventForm from "./components/eventForm";
 import { useState } from "react";
 import { User } from "lucide-react";
 
 export default function Home() {
   const [coordinates, setCoordinates] = useState([-93.265, 44.978]);
+  const [showForm, setShowForm] = useState(false);
   const [events, setEvents] = useState([
     {
       title: "Guthrie Theatre Community Tour",
@@ -36,7 +38,19 @@ export default function Home() {
         <User />
       </div>
       <Map coordinates={coordinates} setCoordinates={setCoordinates} events={events}/>
-      <Sidebar coordinates={coordinates} setCoordinates={setCoordinates} events={events} setEvent={setEvents}/>
+      <Sidebar coordinates={coordinates} setCoordinates={setCoordinates} events={events} setEvent={setEvents} setShowForm={setShowForm}/>
+
+      {showForm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <EventForm
+              setShowForm={setShowForm}
+              coordinates={coordinates}
+              setEvents={setEvents}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
