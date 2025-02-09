@@ -3,13 +3,15 @@ import Map from "./components/map";
 import Sidebar from "./components/sidebar";
 import EventForm from "./components/eventForm";
 import { useState, useEffect } from "react";
-import { User } from "lucide-react";
+import { User, Search } from "lucide-react";
 
 export default function Home() {
   const [latitude, setLatitude] = useState(44.978);
   const [longitude, setLongitude] = useState(-93.265);
   const [showForm, setShowForm] = useState(false);
   const [events, setEvents] = useState([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch events when coordinates change
   useEffect(() => {
@@ -34,11 +36,53 @@ export default function Home() {
     fetchEvents();
   }, [latitude, longitude]);
 
+  const fetchRecommendedEvents = async () => {
+    if (!searchTerm.trim()) return;
+
+    try {
+      const response = await fetch("http://localhost:8000/recommend-events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ searchTerm }),
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch recommended events");
+
+      const data = await response.json();
+
+      if (data && Array.isArray(data.events)) {
+        setEvents(data.events);
+      } else {
+        console.error("Unexpected response format:", data);
+      }
+    } catch (error) {
+      console.error("Error fetching recommended events:", error);
+    }
+  };
+
   return (
     <div className="h-screen w-screen">
       <div className="absolute ml-0 mt-0 h-50 w-50 z-4 bg-50">
         <User />
       </div>
+
+      <div className="absolute top-4 left-12 z-10 flex items-center bg-white shadow-md rounded-lg px-3 py-2">
+        <input
+          type="text"
+          className="outline-none bg-transparent w-60 text-black"
+          placeholder="I'm searching for events..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && fetchRecommendedEvents()}
+        />
+        <button onClick={fetchRecommendedEvents} className="ml-2 p-1">
+          <Search size={20} />
+        </button>
+      </div>
+
+
       <Map latitude={latitude} longitude={longitude} setLatitude={setLatitude} setLongitude={setLongitude} events={events}/>
       <Sidebar latitude={latitude} longitude={longitude} events={events} setEvent={setEvents} setShowForm={setShowForm}/>
 

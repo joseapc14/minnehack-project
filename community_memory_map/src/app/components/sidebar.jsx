@@ -95,7 +95,7 @@ const Sidebar = (props) => {
 
             <input
               type="text"
-              placeholder="Search for an event..."
+              placeholder="Filter for an event..."
               className="p-2 border rounded-lg w-full"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}

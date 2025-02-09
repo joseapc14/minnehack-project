@@ -114,7 +114,7 @@ const Map = (props) => {
               source: event.title,
               layout: {
                 "icon-image": event.title,
-                "icon-size": 0.065,  
+                "icon-size": 0.2,  
                 // "text-field": ["get", "title"],
                 // "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
                 // "text-offset": [0, 1.5],  // Position title below the icon
