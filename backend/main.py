@@ -6,6 +6,7 @@ import io
 import boto3
 import os
 import psycopg2
+import uuid
 from psycopg2.extras import DictCursor
 
 # Initialize FastAPI app
@@ -22,48 +23,46 @@ app.add_middleware(
 
 # AWS S3 Configuration (Set these as environment variables or replace with actual values)
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "your-bucket-name")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "memorymaphackathon")
 S3_PUBLIC_URL = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
 DATABASE_URL = "postgres://ufjgvj3cmsm1m6:pb0ae99a299aaf078c4202af4c25e2479c37cfd6840d7b3f1b531c88e590ff1a1@ccpa7stkruda3o.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d3gtgu1i569dre"
-
 # Initialize S3 client
-s3_client = boto3.client("s3")
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id='your-access-id',  # Optional if set in env
+    aws_secret_access_key='your-secret',  # Optional if set in env
+    region_name='us-east-1'  # Optional if set in env
+)
 
 @app.get("/get-image/{image_name}")
 async def get_image(image_name: str):
-    # Retrieve the image from S3
-    bucket_name = "memorymaphackathon"
-    try:
-        # Fetch the object from the S3 bucket
-        s3_object = s3_client.get_object(Bucket=bucket_name, Key=image_name)
-        image_data = s3_object['Body'].read()
 
-        # Return the image data as a StreamingResponse (use the correct mime type)
-        return StreamingResponse(io.BytesIO(image_data), media_type="image/jpeg")
+    s3_object = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=image_name)
+    image_data = s3_object['Body'].read()
 
-    except Exception as e:
-        return {"error": "Image not found or unable to fetch it"}
+    return StreamingResponse(io.BytesIO(image_data), media_type="image/jpeg")
     
 
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
+    print(S3_PUBLIC_URL)
     try:
-        # Generate a unique file name to avoid overwriting
-        unique_filename = f"{uuid4().hex}_{file.filename}"
-
+        # Generate a unique file name using uuid to avoid overwriting
+        unique_filename = f"{uuid.uuid4().hex}_{file.filename}"
+        print(S3_BUCKET_NAME)
         # Upload file to S3
         s3_client.upload_fileobj(
             file.file,
-            bucket_name,
+            S3_BUCKET_NAME,
             unique_filename,
             ExtraArgs={"ContentType": file.content_type}
         )
 
         # Generate the public URL of the uploaded file
-        file_url = f"https://{bucket_name}.s3.amazonaws.com/{unique_filename}"
+        file_url = f"{S3_PUBLIC_URL}/{unique_filename}"
 
         # Return the URL of the uploaded image
-        return JSONResponse(content={"image_url": file_url})
+        return JSONResponse(content={"image_url": file_url}, status_code=200)
 
     except NoCredentialsError:
         raise HTTPException(status_code=403, detail="AWS credentials not found or incorrect.")
