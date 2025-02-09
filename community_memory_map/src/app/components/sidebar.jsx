@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Filter, PlusCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Sidebar = (props) => {
-  const { latitude, longitude, events, setEvents, setShowForm } = props;
+  const { latitude, longitude, events, setShowForm, usingSearchTerm, searchTerm } = props;
   const [isExpanded, setIsExpanded] = useState(true);
 
   const [filter, setFilter] = useState("");
@@ -108,7 +108,7 @@ const Sidebar = (props) => {
                 : filterType.memories
                 ? "Showing memories"
                 : "No filter applied"}{" "}
-              for [{longitude.toFixed(3)}, {latitude.toFixed(3)}]
+              for [{longitude.toFixed(3)}, {latitude.toFixed(3)}] {usingSearchTerm ? 'using search terms "' + searchTerm + '"' : ""}
             </div>
           </div>
         )}

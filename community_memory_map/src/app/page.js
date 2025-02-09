@@ -12,6 +12,7 @@ export default function Home() {
   const [events, setEvents] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [usingSearchTerm, setUsingSearchTerm] = useState(false)
 
   // Fetch events when coordinates change
   useEffect(() => {
@@ -25,6 +26,7 @@ export default function Home() {
         
         if (data && Array.isArray(data.events)) {
           setEvents(data.events);  
+          setUsingSearchTerm(false);
         } else {
           console.error("Unexpected data format:", data);
         }
@@ -40,12 +42,12 @@ export default function Home() {
     if (!searchTerm.trim()) return;
 
     try {
-      const response = await fetch("http://localhost:8000/recommend-events", {
+      const response = await fetch("http://127.0.0.1:8000/recommend-events", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ searchTerm }),
+        body: JSON.stringify({ query: searchTerm })
       });
 
       if (!response.ok) throw new Error("Failed to fetch recommended events");
@@ -54,6 +56,7 @@ export default function Home() {
 
       if (data && Array.isArray(data.events)) {
         setEvents(data.events);
+        setUsingSearchTerm(true);
       } else {
         console.error("Unexpected response format:", data);
       }
@@ -68,10 +71,10 @@ export default function Home() {
         <User />
       </div>
 
-      <div className="absolute top-4 left-12 z-10 flex items-center bg-white shadow-md rounded-lg px-3 py-2">
+      <div className="absolute w-2/5 top-4 left-12 z-10 flex items-center bg-white shadow-md rounded-lg px-3 py-2">
         <input
           type="text"
-          className="outline-none bg-transparent w-60 text-black"
+          className="outline-none bg-transparent w-full text-black"
           placeholder="I'm searching for events..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -84,7 +87,7 @@ export default function Home() {
 
 
       <Map latitude={latitude} longitude={longitude} setLatitude={setLatitude} setLongitude={setLongitude} events={events}/>
-      <Sidebar latitude={latitude} longitude={longitude} events={events} setEvent={setEvents} setShowForm={setShowForm}/>
+      <Sidebar latitude={latitude} longitude={longitude} events={events} setShowForm={setShowForm} usingSearchTerm={usingSearchTerm} searchTerm={searchTerm}/>
 
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

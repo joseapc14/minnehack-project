@@ -17,7 +17,6 @@ import pickle
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
-from pydantic import BaseModel
 from typing import List
 
 # Initialize FastAPI app
@@ -45,8 +44,6 @@ s3_client = boto3.client(
     region_name='us-east-1'  # Optional if set in env
 )
 
-
-
 @app.get("/get-image/{image_name}")
 async def get_image(image_name: str):
 
@@ -56,7 +53,7 @@ async def get_image(image_name: str):
     return StreamingResponse(io.BytesIO(image_data), media_type="image/jpeg")
     
 
-counter=[1]
+
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
    print(S3_PUBLIC_URL)
@@ -70,17 +67,15 @@ async def upload_image(file: UploadFile = File(...)):
            buffer.write(await file.read())
        print(S3_BUCKET_NAME)
        subprocess.run(["node", "process.js"], capture_output=True, text=True)
-       print('ran subprocess')
        # Upload file to S3
        print('uploading')
        with open("output_with_transparent_circle.png", 'rb') as editedFile:
            s3_client.upload_fileobj(
                editedFile,
                S3_BUCKET_NAME,
-               str(counter[0])+".png",
+               unique_filename,
                ExtraArgs={"ContentType": "image/png"}
            )
-       counter[0]+=1
        print('reached1')
        # Generate the public URL of the uploaded file
        file_url = f"{S3_PUBLIC_URL}/{unique_filename}"
@@ -213,7 +208,6 @@ async def add_event(event: Event):
     except Exception as e:
         print("General error:", e) 
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-    
 
 
 
