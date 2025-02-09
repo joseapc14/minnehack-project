@@ -4,7 +4,15 @@ import { ChevronLeft, ChevronRight, Filter, PlusCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Sidebar = (props) => {
-  const { latitude, longitude, events, setShowForm, usingSearchTerm, searchTerm } = props;
+  const {
+    latitude,
+    longitude,
+    events,
+    setShowForm,
+    usingSearchTerm,
+    searchTerm,
+    mapInstance
+  } = props;
   const [isExpanded, setIsExpanded] = useState(true);
 
   const [filter, setFilter] = useState("");
@@ -108,7 +116,8 @@ const Sidebar = (props) => {
                 : filterType.memories
                 ? "Showing memories"
                 : "No filter applied"}{" "}
-              for [{longitude.toFixed(3)}, {latitude.toFixed(3)}] {usingSearchTerm ? 'using search terms "' + searchTerm + '"' : ""}
+              for [{longitude.toFixed(3)}, {latitude.toFixed(3)}]{" "}
+              {usingSearchTerm ? 'using search terms "' + searchTerm + '"' : ""}
             </div>
           </div>
         )}
@@ -120,7 +129,18 @@ const Sidebar = (props) => {
               {filteredEvents.map((event, index) => (
                 <div
                   key={index}
-                  className="p-4 border rounded-lg shadow-sm bg-white"
+                  className="p-4 border rounded-lg shadow-sm bg-white cursor-pointer"
+                  onDoubleClick={() => {
+                    if (mapInstance) {
+                      mapInstance.flyTo({
+                        center: [event.longitude + 0.004, event.latitude],
+                        zoom: 16, 
+                        speed: 1.2, 
+                        curve: 1,
+                        duration: 2000, 
+                      });
+                    }
+                  }}
                 >
                   <h2 className="font-bold text-lg">{event.title}</h2>
                   <p className="text-sm text-gray-600">{event.description}</p>

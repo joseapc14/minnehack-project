@@ -10,6 +10,7 @@ export default function Home() {
   const [longitude, setLongitude] = useState(-93.265);
   const [showForm, setShowForm] = useState(false);
   const [events, setEvents] = useState([]);
+  const [mapInstance, setMapInstance] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [usingSearchTerm, setUsingSearchTerm] = useState(false)
@@ -86,8 +87,8 @@ export default function Home() {
       </div>
 
 
-      <Map latitude={latitude} longitude={longitude} setLatitude={setLatitude} setLongitude={setLongitude} events={events}/>
-      <Sidebar latitude={latitude} longitude={longitude} events={events} setShowForm={setShowForm} usingSearchTerm={usingSearchTerm} searchTerm={searchTerm}/>
+      <Map latitude={latitude} longitude={longitude} setLatitude={setLatitude} setLongitude={setLongitude} events={events} setMapInstance={setMapInstance}/>
+      <Sidebar latitude={latitude} longitude={longitude} events={events} setShowForm={setShowForm} usingSearchTerm={usingSearchTerm} searchTerm={searchTerm} mapInstance={mapInstance}/>
 
       {showForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

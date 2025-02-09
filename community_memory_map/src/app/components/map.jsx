@@ -5,7 +5,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 const Map = (props) => {
-  const { latitude, longitude, setLatitude, setLongitude, events } = props;
+  const { latitude, longitude, setLatitude, setLongitude, events, setMapInstance } = props;
 
   const mapContainerRef = useRef();
   const mapRef = useRef();
@@ -33,7 +33,14 @@ const Map = (props) => {
       },
     });
 
+    if (setMapInstance) {
+      setMapInstance(mapRef.current);
+    }
+
     mapRef.current.on("style.load", () => {
+      
+
+
       const zoomBasedReveal = (value) => {
         return ["interpolate", ["linear"], ["zoom"], 11, 0.0, 13, value];
       };
