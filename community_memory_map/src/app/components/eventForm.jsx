@@ -12,7 +12,6 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
 
   const [imagePreview, setImagePreview] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
-  const [imageUrl, setImageUrl] = useState(null); // Store the image URL after upload
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,7 +80,6 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
       // Reset form on success
       setNewEvent({ title: "", description: "", tags: "", image: null, date: "" });
       setImagePreview(null);
-      setImageUrl(null);
       setErrorMessage("");
       setShowForm(false);
       setEvents((prevEvents) => [...prevEvents, eventData]); // Update UI with new event
