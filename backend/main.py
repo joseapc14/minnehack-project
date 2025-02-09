@@ -12,6 +12,14 @@ from pydantic import BaseModel
 from psycopg2.extras import DictCursor
 from datetime import datetime, date
 
+# Additional imports for recommendations
+import pickle
+import pandas as pd
+import numpy as np
+from dotenv import load_dotenv
+from pydantic import BaseModel
+from typing import List
+
 # Initialize FastAPI app
 app = FastAPI()
 
@@ -48,7 +56,7 @@ async def get_image(image_name: str):
     return StreamingResponse(io.BytesIO(image_data), media_type="image/jpeg")
     
 
-
+counter=[1]
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...)):
    print(S3_PUBLIC_URL)
@@ -62,15 +70,17 @@ async def upload_image(file: UploadFile = File(...)):
            buffer.write(await file.read())
        print(S3_BUCKET_NAME)
        subprocess.run(["node", "process.js"], capture_output=True, text=True)
+       print('ran subprocess')
        # Upload file to S3
        print('uploading')
        with open("output_with_transparent_circle.png", 'rb') as editedFile:
            s3_client.upload_fileobj(
                editedFile,
                S3_BUCKET_NAME,
-               unique_filename,
+               str(counter[0])+".png",
                ExtraArgs={"ContentType": "image/png"}
            )
+       counter[0]+=1
        print('reached1')
        # Generate the public URL of the uploaded file
        file_url = f"{S3_PUBLIC_URL}/{unique_filename}"
@@ -203,3 +213,153 @@ async def add_event(event: Event):
     except Exception as e:
         print("General error:", e) 
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+    
+
+
+
+# ---------------------------
+# New Recommendation Endpoint
+# ---------------------------
+
+load_dotenv()
+EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_CACHE_PATH = "recommendations_embeddings_cache.pkl"
+try:
+    embedding_cache = pd.read_pickle(EMBEDDING_CACHE_PATH)
+except FileNotFoundError:
+    embedding_cache = {}
+with open(EMBEDDING_CACHE_PATH, "wb") as cache_file:
+    pickle.dump(embedding_cache, cache_file)
+
+def get_embedding(text: str, model: str = EMBEDDING_MODEL) -> list:
+    from openai import OpenAI
+    client = OpenAI()  # Assumes OPENAI_API_KEY is set in the environment
+    response = client.embeddings.create(input=text, model=model)
+    return response.data[0].embedding
+
+def embedding_from_string(string: str, model: str = EMBEDDING_MODEL, cache=embedding_cache) -> list:
+    key = (string, model)
+    if key not in cache:
+        cache[key] = get_embedding(string, model)
+        with open(EMBEDDING_CACHE_PATH, "wb") as cache_file:
+            pickle.dump(cache, cache_file)
+    return cache[key]
+
+def distances_from_embeddings(query_embedding: list, embeddings: list, distance_metric="cosine") -> list:
+    query = np.array(query_embedding)
+    all_embeddings = np.array(embeddings)
+    if distance_metric == "cosine":
+        dot_products = np.dot(all_embeddings, query)
+        query_norm = np.linalg.norm(query)
+        embeddings_norm = np.linalg.norm(all_embeddings, axis=1)
+        cosine_similarities = dot_products / (embeddings_norm * query_norm + 1e-10)
+        distances = 1 - cosine_similarities
+        return distances.tolist()
+    else:
+        distances = np.linalg.norm(all_embeddings - query, axis=1)
+        return distances.tolist()
+
+def indices_of_nearest_neighbors_from_distances(distances: list) -> list:
+    return sorted(range(len(distances)), key=lambda i: distances[i])
+
+def get_recommendations_from_query(events_df: pd.DataFrame, query: str, k_nearest_neighbors: int = 10) -> dict:
+    """
+    Given a query string, compute its embedding and compare it with the embeddings for all events.
+    Each event's text is a combination of its title and description.
+    Returns a dictionary in the format:
+    
+    {
+        "events": [
+            {
+                "username": "...",
+                "title": "...",
+                "description": "...",
+                "imageurl": "...",
+                "tags": "...",
+                "longitude": ...,
+                "latitude": ...,
+                "date": "...",
+                "postid": ...,
+                "isEvent": ...,
+                "distance": <computed distance>
+            },
+            ...
+        ]
+    }
+    """
+    # Combine title and description using .get() to avoid missing-key errors
+    event_texts = events_df.apply(
+        lambda row: f"Title: {row.get('title', '')}\nDescription: {row.get('description', '')}",
+        axis=1
+    ).tolist()
+    
+    # Compute (or retrieve cached) embeddings for all events
+    event_embeddings = [embedding_from_string(text, model=EMBEDDING_MODEL) for text in event_texts]
+    
+    # Compute embedding for the query string
+    query_embedding = embedding_from_string(query, model=EMBEDDING_MODEL)
+    
+    # Compute cosine distances between the query and each event embedding
+    distances = distances_from_embeddings(query_embedding, event_embeddings, distance_metric="cosine")
+    
+    # Get indices sorted by increasing distance (most similar first)
+    neighbor_indices = indices_of_nearest_neighbors_from_distances(distances)
+    
+    recommended_events = []
+    count = 0
+    for idx in neighbor_indices:
+        if count >= k_nearest_neighbors:
+            break
+        # Convert the row to a dictionary
+        event_dict = events_df.iloc[idx].to_dict()
+        # Generate a unique identifier (postid) using the DataFrame's index (you can change this if needed)
+        event_dict["postid"] = int(events_df.index[idx])
+        # Add the computed distance
+        event_dict["distance"] = distances[idx]
+        recommended_events.append(event_dict)
+        count += 1
+    
+    return {"events": recommended_events}
+
+# Pydantic model for incoming recommendation query
+class QueryRequest(BaseModel):
+    query: str
+
+@app.post("/recommend-events", response_model=dict)
+def recommend_events(request: QueryRequest):
+    try:
+        # Connect to the database and fetch all events from EventData
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=DictCursor)
+        cursor.execute("SELECT * FROM EventData")
+        events = cursor.fetchall()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving events: {str(e)}")
+    
+    # Convert the events to a DataFrame ensuring each row is a dictionary
+    df = pd.DataFrame([dict(row) for row in events])
+    # Normalize column names to lowercase
+    df.columns = [str(col).lower() for col in df.columns]
+    
+    # Rename columns to match desired output:
+    if "user" in df.columns:
+        df = df.rename(columns={"user": "username"})
+    if "isevent" in df.columns:
+        df = df.rename(columns={"isevent": "isEvent"})
+    
+    # Convert the date column if it exists (SQL DATE to ISO format)
+    if "date" in df.columns and pd.api.types.is_datetime64_any_dtype(df["date"]):
+        df["date"] = df["date"].apply(lambda d: d.isoformat())
+    
+    # Get the recommendations for the provided query
+    recommendations = get_recommendations_from_query(df, request.query, k_nearest_neighbors=10)
+    return recommendations
+
+# ---------------------------
+# Root Endpoint
+# ---------------------------
+@app.get("/")
+def root():
+    return {"message": "Backend is up and running."}
