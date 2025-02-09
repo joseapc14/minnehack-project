@@ -6,6 +6,7 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
   const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
+    tags: "",
     image: null,
     date: "", 
   });
@@ -17,7 +18,7 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
     e.preventDefault();
     if (
       !newEvent.title.trim() ||
-      !newEvent.description.trim() ||
+      // !newEvent.description.trim() ||
       !newEvent.date
     ) {
       return; 
@@ -31,6 +32,7 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
     setNewEvent({
       title: "",
       description: "",
+      tags:"",
       image: null,
       date: "",
     });
@@ -76,10 +78,18 @@ const EventForm = ({ setShowForm, coordinates, setEvents }) => {
         />
         <textarea
           placeholder="Event Description"
-          className="p-2 border rounded-lg h-40 min-h-10 max-h-80 overflow-auto" 
+          className="p-2 border rounded-lg h-40 min-h-10 max-h-60 overflow-auto" 
           value={newEvent.description}
           onChange={(e) =>
             setNewEvent((prev) => ({ ...prev, description: e.target.value }))
+          }
+        />
+        <textarea
+          placeholder="Tags"
+          className="p-2 border rounded-lg h-10 min-h-10 max-h-20 overflow-auto" 
+          value={newEvent.tags}
+          onChange={(e) =>
+            setNewEvent((prev) => ({ ...prev, tags: e.target.value }))
           }
         />
         <input
